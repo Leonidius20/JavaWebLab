@@ -4,6 +4,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Scanner;
+import java.util.concurrent.*;
 
 /**
  * Знайти в заданій директорії всі файли, що містять вихідний код Java- програми,
@@ -12,9 +13,15 @@ import java.util.Scanner;
  */
 public class Main {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
         Path relativeCurrentPath = Paths.get("");
         File directory;
+
+        // ExecutorService executor = Executors.newCachedThreadPool();
+
+        ExecutorService executor = new ThreadPoolExecutor(
+                5, 15, 1,
+                TimeUnit.MILLISECONDS, new SynchronousQueue<>(), (ThreadFactory) Thread::new);
 
         do {
             directory = relativeCurrentPath.toAbsolutePath().toFile();
@@ -26,7 +33,9 @@ public class Main {
 
         } while (!directory.exists());
 
-        new Thread(new DirectoryProcessor(directory)).start();
+        var future = executor.submit(new DirectoryProcessor(directory, executor));
+        future.get();
+        executor.shutdown();
     }
 
 }
